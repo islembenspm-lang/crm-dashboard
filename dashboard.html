@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRM Dashboard - إدارة العملاء</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  
+  :root {
+    --bg: #0f1117;
+    --card: #1a1d27;
+    --card2: #21253a;
+    --accent: #6c63ff;
+    --accent2: #ff6b6b;
+    --green: #00d4a0;
+    --yellow: #ffd166;
+    --orange: #ff9a3c;
+    --text: #e8eaf6;
+    --muted: #8892b0;
+    --border: #2d3250;
+  }
+  
+  body {
+    font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ===== HEADER ===== */
+  .header {
+    background: linear-gradient(135deg, #1a1d27 0%, #21253a 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(10px);
+  }
+  .header-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .header-logo {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--accent), #9c98ff);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .header h1 { font-size: 18px; font-weight: 700; }
+  .header-sub { font-size: 11px; color: var(--muted); }
+  
+  .sync-btn {
+    background: linear-gradient(135deg, var(--accent), #9c98ff);
+    color: white;
+    border: none;
+    padding: 9px 18px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    display: flex; align-items: center; gap: 6px;
+    transition: all 0.2s;
+  }
+  .sync-btn:hover { transform: translateY(-1px); opacity: 0.9; }
+  .sync-btn.loading { opacity: 0.6; cursor: not-allowed; }
+
+  /* ===== MAIN ===== */
+  .container { max-width: 1100px; margin: 0 auto; padding: 24px 16px; }
+
+  /* ===== CONFIG BOX ===== */
+  .config-box {
+    background: linear-gradient(135deg, #21253a, #2d3250);
+    border: 1px solid var(--accent);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 24px;
+  }
+  .config-box h3 { font-size: 14px; color: var(--accent); margin-bottom: 14px; }
+  .config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .config-field label { font-size: 11px; color: var(--muted); display: block; margin-bottom: 5px; }
+  .config-field input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 12px;
+    color: var(--text);
+    font-size: 13px;
+  }
+  .config-field input:focus { outline: none; border-color: var(--accent); }
+  .save-config {
+    margin-top: 12px;
+    background: var(--accent);
+    color: white; border: none;
+    padding: 9px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  /* ===== STATS ===== */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 16px;
+    text-align: center;
+    transition: transform 0.2s;
+    cursor: pointer;
+  }
+  .stat-card:hover { transform: translateY(-3px); border-color: var(--accent); }
+  .stat-card.active { border-color: var(--accent); background: var(--card2); }
+  .stat-icon { font-size: 24px; margin-bottom: 8px; }
+  .stat-value { font-size: 28px; font-weight: 800; line-height: 1; }
+  .stat-label { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+  /* ===== PIPELINE ===== */
+  .pipeline-title { font-size: 15px; font-weight: 600; margin-bottom: 14px; color: var(--muted); }
+  .pipeline { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 28px; }
+  .pipeline-stage {
+    min-width: 130px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px;
+    flex-shrink: 0;
+  }
+  .stage-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .stage-name { font-size: 11px; font-weight: 600; }
+  .stage-count {
+    background: var(--border);
+    border-radius: 20px;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .stage-bar {
+    height: 3px;
+    border-radius: 2px;
+    margin-bottom: 10px;
+  }
+  .mini-lead {
+    background: var(--bg);
+    border-radius: 7px;
+    padding: 7px 9px;
+    margin-bottom: 6px;
+    font-size: 11px;
+    border: 1px solid var(--border);
+  }
+  .mini-lead-name { font-weight: 600; }
+  .mini-lead-biz { color: var(--muted); font-size: 10px; margin-top: 2px; }
+
+  /* ===== FILTERS ===== */
+  .filters {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+  .filter-btn {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 7px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 12px;
+    white-space: nowrap;
+    transition: all 0.2s;
+  }
+  .filter-btn:hover, .filter-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+  }
+
+  /* ===== TABLE ===== */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    text-align: right;
+    padding: 12px 16px;
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border);
+    background: var(--card);
+  }
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+  }
+  tbody tr:hover { background: var(--card2); }
+  tbody td { padding: 14px 16px; font-size: 13px; }
+  
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  
+  .platform-tag {
+    background: var(--border);
+    color: var(--muted);
+    padding: 3px 8px;
+    border-radius: 5px;
+    font-size: 11px;
+  }
+  
+  .contact-link { color: var(--accent); text-decoration: none; font-size: 12px; }
+  
+  .action-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 5px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 11px;
+    transition: all 0.2s;
+  }
+  .action-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ===== MODAL ===== */
+  .modal-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 24px;
+    width: 100%;
+    max-width: 440px;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  .modal h3 { font-size: 16px; margin-bottom: 20px; }
+  .form-group { margin-bottom: 15px; }
+  .form-group label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+  .form-group input, .form-group select, .form-group textarea {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-size: 13px;
+    font-family: inherit;
+  }
+  .form-group textarea { resize: vertical; min-height: 80px; }
+  .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--accent); }
+  .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+  .btn-primary {
+    flex: 1;
+    background: linear-gradient(135deg, var(--accent), #9c98ff);
+    color: white; border: none;
+    padding: 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .btn-secondary {
+    flex: 0.5;
+    background: var(--border);
+    color: var(--muted); border: none;
+    padding: 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+
+  /* ===== TOAST ===== */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--green);
+    color: #0a2e1e;
+    padding: 12px 20px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 600;
+    transform: translateY(100px);
+    transition: transform 0.3s;
+    z-index: 9999;
+  }
+  .toast.show { transform: translateY(0); }
+
+  /* ===== EMPTY STATE ===== */
+  .empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+  }
+  .empty-icon { font-size: 48px; margin-bottom: 12px; }
+
+  /* ===== FAB (mobile) ===== */
+  .fab {
+    position: fixed;
+    bottom: 24px;
+    left: 24px;
+    width: 56px; height: 56px;
+    background: linear-gradient(135deg, var(--accent), #9c98ff);
+    border: none;
+    border-radius: 50%;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(108,99,255,0.5);
+    z-index: 100;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  @media (max-width: 640px) {
+    .config-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 15px; }
+    tbody td:nth-child(n+5) { display: none; }
+    .pipeline { display: none; }
+    .pipeline-title { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-brand">
+    <div class="header-logo">🚀</div>
+    <div>
+      <h1>CRM Dashboard</h1>
+      <div class="header-sub">إدارة العملاء المحتملين</div>
+    </div>
+  </div>
+  <button class="sync-btn" onclick="loadLeads()" id="syncBtn">
+    <span>🔄</span> تحديث
+  </button>
+</div>
+
+<!-- MAIN -->
+<div class="container">
+
+  <!-- CONFIG -->
+  <div class="config-box" id="configBox">
+    <h3>⚙️ إعداد واحد فقط (مرة واحدة)</h3>
+    <div class="config-grid" style="grid-template-columns:1fr">
+      <div class="config-field">
+        <label>🔗 رابط Google Apps Script (Web App URL)</label>
+        <input type="text" id="scriptUrl" placeholder="https://script.google.com/macros/s/AKfy.../exec">
+        <small style="color:var(--muted);font-size:11px;margin-top:4px;display:block">
+          من Google Sheets ← Extensions ← Apps Script ← Deploy ← Manage deployments ← انسخ الرابط
+        </small>
+      </div>
+    </div>
+    <button class="save-config" onclick="saveConfig()">💾 حفظ وتحميل البيانات</button>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-grid" id="statsGrid">
+    <div class="stat-card" onclick="filterLeads('all')">
+      <div class="stat-icon">👥</div>
+      <div class="stat-value" id="statTotal">0</div>
+      <div class="stat-label">إجمالي العملاء</div>
+    </div>
+    <div class="stat-card" onclick="filterLeads('مهتم')">
+      <div class="stat-icon">🟠</div>
+      <div class="stat-value" id="statInterested">0</div>
+      <div class="stat-label">مهتمون</div>
+    </div>
+    <div class="stat-card" onclick="filterLeads('طلب مكالمة')">
+      <div class="stat-icon">📞</div>
+      <div class="stat-value" id="statCall">0</div>
+      <div class="stat-label">طلبوا مكالمة</div>
+    </div>
+    <div class="stat-card" onclick="filterLeads('تم الإغلاق ✅')">
+      <div class="stat-icon">✅</div>
+      <div class="stat-value" id="statClosed">0</div>
+      <div class="stat-label">عملاء مغلقون</div>
+    </div>
+    <div class="stat-card" onclick="filterLeads('غير مهتم ❌')">
+      <div class="stat-icon">❌</div>
+      <div class="stat-value" id="statRejected">0</div>
+      <div class="stat-label">غير مهتمين</div>
+    </div>
+  </div>
+
+  <!-- PIPELINE -->
+  <div class="pipeline-title">🔀 Pipeline العملاء</div>
+  <div class="pipeline" id="pipeline"></div>
+
+  <!-- FILTERS -->
+  <div class="filters">
+    <button class="filter-btn active" onclick="filterLeads('all', this)">الكل</button>
+    <button class="filter-btn" onclick="filterLeads('جديد', this)">🔵 جديد</button>
+    <button class="filter-btn" onclick="filterLeads('تم التواصل', this)">🟡 تم التواصل</button>
+    <button class="filter-btn" onclick="filterLeads('مهتم', this)">🟠 مهتم</button>
+    <button class="filter-btn" onclick="filterLeads('طلب مكالمة', this)">📞 طلب مكالمة</button>
+    <button class="filter-btn" onclick="filterLeads('تم الاجتماع', this)">🤝 اجتماع</button>
+    <button class="filter-btn" onclick="filterLeads('تم الإغلاق ✅', this)">✅ مغلق</button>
+    <button class="filter-btn" onclick="filterLeads('غير مهتم ❌', this)">❌ مرفوض</button>
+  </div>
+
+  <!-- TABLE -->
+  <div class="table-wrap">
+    <table id="leadsTable">
+      <thead>
+        <tr>
+          <th>الاسم</th>
+          <th>النشاط</th>
+          <th>المنصة</th>
+          <th>التواصل</th>
+          <th>الحالة</th>
+          <th>ملاحظات</th>
+          <th>التاريخ</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="leadsBody">
+        <tr><td colspan="8">
+          <div class="empty">
+            <div class="empty-icon">⚙️</div>
+            <p>أضف إعدادات Google Sheets أولاً</p>
+          </div>
+        </td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- FAB -->
+<button class="fab" onclick="openModal()" title="إضافة عميل">+</button>
+
+<!-- MODAL: Add Lead -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h3>➕ إضافة عميل جديد</h3>
+    <div class="form-group">
+      <label>الاسم *</label>
+      <input type="text" id="fName" placeholder="محمد أحمد">
+    </div>
+    <div class="form-group">
+      <label>النشاط التجاري</label>
+      <input type="text" id="fBiz" placeholder="مطعم / كافيه / متجر...">
+    </div>
+    <div class="form-group">
+      <label>المنصة *</label>
+      <select id="fPlatform">
+        <option>إنستغرام</option>
+        <option>واتساب</option>
+        <option>إنستغرام + واتساب</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>رقم الواتساب / معرف إنستغرام</label>
+      <input type="text" id="fContact" placeholder="0501234567 / @username">
+    </div>
+    <div class="form-group">
+      <label>الحالة</label>
+      <select id="fStatus">
+        <option>جديد</option>
+        <option>تم التواصل</option>
+        <option>مهتم</option>
+        <option>طلب مكالمة</option>
+        <option>تم الاجتماع</option>
+        <option>تم الإغلاق ✅</option>
+        <option>غير مهتم ❌</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>ملاحظات</label>
+      <textarea id="fNotes" placeholder="أي تفاصيل مهمة..."></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal()">إلغاء</button>
+      <button class="btn-primary" onclick="addLeadFromForm()">✅ حفظ العميل</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== DATA =====
+let allLeads = [];
+let config = JSON.parse(localStorage.getItem('crm_config') || '{}');
+
+const STATUS_CONFIG = {
+  'جديد':          { color: '#4c9fff', bg: 'rgba(76,159,255,0.15)', emoji: '🔵' },
+  'تم التواصل':    { color: '#ffd166', bg: 'rgba(255,209,102,0.15)', emoji: '🟡' },
+  'مهتم':          { color: '#ff9a3c', bg: 'rgba(255,154,60,0.15)',  emoji: '🟠' },
+  'طلب مكالمة':   { color: '#da9fff', bg: 'rgba(218,159,255,0.15)', emoji: '📞' },
+  'تم الاجتماع':  { color: '#00d4a0', bg: 'rgba(0,212,160,0.15)',   emoji: '🤝' },
+  'تم الإغلاق ✅': { color: '#00d4a0', bg: 'rgba(0,212,160,0.15)',  emoji: '✅' },
+  'غير مهتم ❌':  { color: '#ff6b6b', bg: 'rgba(255,107,107,0.15)', emoji: '❌' },
+};
+
+// ===== INIT =====
+window.onload = () => {
+  if (config.scriptUrl) {
+    document.getElementById('scriptUrl').value = config.scriptUrl;
+    document.getElementById('configBox').style.display = 'none';
+    loadLeads();
+  }
+};
+
+// ===== CONFIG =====
+function saveConfig() {
+  config.scriptUrl = document.getElementById('scriptUrl').value.trim();
+  if (!config.scriptUrl) {
+    showToast('❌ أدخل رابط Apps Script', 'error'); return;
+  }
+  localStorage.setItem('crm_config', JSON.stringify(config));
+  document.getElementById('configBox').style.display = 'none';
+  loadLeads();
+}
+
+// ===== LOAD FROM APPS SCRIPT =====
+async function loadLeads() {
+  if (!config.scriptUrl) return;
+  const btn = document.getElementById('syncBtn');
+  btn.classList.add('loading');
+  btn.innerHTML = '<span>⏳</span> جاري التحميل...';
+
+  try {
+    const url = `${config.scriptUrl}?action=GET_LEADS`;
+    const res = await fetch(url);
+    const data = await res.json();
+
+    if (!data.success) throw new Error(data.error || 'خطأ غير معروف');
+
+    allLeads = data.leads || [];
+    renderAll();
+    showToast(`✅ تم تحميل ${allLeads.length} عميل`);
+  } catch(e) {
+    showToast('❌ خطأ: ' + e.message + ' - تأكد من رابط Apps Script', 'error');
+    loadDemoData();
+  } finally {
+    btn.classList.remove('loading');
+    btn.innerHTML = '<span>🔄</span> تحديث';
+  }
+}
+
+function loadDemoData() {
+  allLeads = [
+    {ID:'L001', الاسم:'محمد الغامدي', 'النشاط التجاري':'مطعم شاورما', المنصة:'إنستغرام', التواصل:'@shawarma.mhmd', الحالة:'مهتم', ملاحظات:'يريد موقع بكتالوج', 'تاريخ الإضافة':'2025-01-10'},
+    {ID:'L002', الاسم:'سارة العمري', 'النشاط التجاري':'مشغل حلاقة', المنصة:'واتساب', التواصل:'0502345678', الحالة:'طلب مكالمة', ملاحظات:'', 'تاريخ الإضافة':'2025-01-11'},
+    {ID:'L003', الاسم:'أحمد التميمي', 'النشاط التجاري':'متجر ملابس', المنصة:'إنستغرام', التواصل:'@tm_fashion', الحالة:'جديد', ملاحظات:'', 'تاريخ الإضافة':'2025-01-12'},
+    {ID:'L004', الاسم:'نورة الزهراني', 'النشاط التجاري':'كافيه ومخبز', المنصة:'إنستغرام + واتساب', التواصل:'0509876543', الحالة:'تم الإغلاق ✅', ملاحظات:'مشروع 3500 ريال', 'تاريخ الإضافة':'2025-01-08'},
+    {ID:'L005', الاسم:'فهد السبيعي', 'النشاط التجاري':'صالون رجالي', المنصة:'واتساب', التواصل:'0501112233', الحالة:'غير مهتم ❌', ملاحظات:'عنده موقع قديم لا يريد تغييره', 'تاريخ الإضافة':'2025-01-09'},
+    {ID:'L006', الاسم:'ريم الدوسري', 'النشاط التجاري':'عيادة تجميل', المنصة:'إنستغرام', التواصل:'@reem.clinic', الحالة:'تم الاجتماع', ملاحظات:'مقابلة الاثنين الساعة 4', 'تاريخ الإضافة':'2025-01-13'},
+  ];
+  renderAll();
+  showToast('📊 تم تحميل بيانات تجريبية - أضف بياناتك الحقيقية في الإعدادات');
+}
+
+// ===== RENDER =====
+function renderAll() {
+  renderStats();
+  renderPipeline();
+  renderTable(allLeads);
+}
+
+function renderStats() {
+  const count = (status) => allLeads.filter(l => l['الحالة'] === status).length;
+  document.getElementById('statTotal').textContent = allLeads.length;
+  document.getElementById('statInterested').textContent = count('مهتم');
+  document.getElementById('statCall').textContent = count('طلب مكالمة');
+  document.getElementById('statClosed').textContent = count('تم الإغلاق ✅');
+  document.getElementById('statRejected').textContent = count('غير مهتم ❌');
+}
+
+function renderPipeline() {
+  const stages = ['جديد', 'تم التواصل', 'مهتم', 'طلب مكالمة', 'تم الاجتماع', 'تم الإغلاق ✅'];
+  const container = document.getElementById('pipeline');
+  container.innerHTML = '';
+  
+  stages.forEach(stage => {
+    const leads = allLeads.filter(l => l['الحالة'] === stage);
+    const cfg = STATUS_CONFIG[stage] || {};
+    const div = document.createElement('div');
+    div.className = 'pipeline-stage';
+    div.innerHTML = `
+      <div class="stage-header">
+        <span class="stage-name">${cfg.emoji || ''} ${stage}</span>
+        <span class="stage-count" style="background:${cfg.bg};color:${cfg.color}">${leads.length}</span>
+      </div>
+      <div class="stage-bar" style="background:${cfg.color};opacity:0.6"></div>
+      ${leads.slice(0,3).map(l => `
+        <div class="mini-lead">
+          <div class="mini-lead-name">${l['الاسم']}</div>
+          <div class="mini-lead-biz">${l['النشاط التجاري'] || ''}</div>
+        </div>
+      `).join('')}
+      ${leads.length > 3 ? `<div style="font-size:11px;color:var(--muted);text-align:center">+${leads.length-3} أكثر</div>` : ''}
+    `;
+    container.appendChild(div);
+  });
+}
+
+function renderTable(leads) {
+  const tbody = document.getElementById('leadsBody');
+  if (!leads.length) {
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty"><div class="empty-icon">📭</div><p>لا يوجد عملاء</p></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = leads.map(l => {
+    const cfg = STATUS_CONFIG[l['الحالة']] || {color:'#888', bg:'rgba(136,136,136,0.1)', emoji:'▪️'};
+    return `
+    <tr>
+      <td><strong>${l['الاسم'] || ''}</strong></td>
+      <td>${l['النشاط التجاري'] || '<span style="color:var(--muted)">-</span>'}</td>
+      <td><span class="platform-tag">${l['المنصة'] || ''}</span></td>
+      <td><span class="contact-link">${l['التواصل'] || ''}</span></td>
+      <td>
+        <span class="badge" style="color:${cfg.color};background:${cfg.bg}">
+          ${cfg.emoji} ${l['الحالة'] || ''}
+        </span>
+      </td>
+      <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);font-size:12px">
+        ${l['ملاحظات'] || ''}
+      </td>
+      <td style="color:var(--muted);font-size:11px">${(l['تاريخ الإضافة'] || '').split(' ')[0]}</td>
+      <td>
+        <select onchange="quickStatus('${l['الاسم']}', this.value)" 
+          style="background:var(--bg);border:1px solid var(--border);color:var(--muted);padding:4px 8px;border-radius:6px;font-size:11px;cursor:pointer">
+          <option value="">تغيير...</option>
+          <option>جديد</option>
+          <option>تم التواصل</option>
+          <option>مهتم</option>
+          <option>طلب مكالمة</option>
+          <option>تم الاجتماع</option>
+          <option>تم الإغلاق ✅</option>
+          <option>غير مهتم ❌</option>
+        </select>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ===== FILTER =====
+let currentFilter = 'all';
+function filterLeads(status, btn) {
+  currentFilter = status;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  const filtered = status === 'all' ? allLeads : allLeads.filter(l => l['الحالة'] === status);
+  renderTable(filtered);
+  // highlight stat card
+  document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('active'));
+}
+
+// ===== QUICK STATUS =====
+function quickStatus(name, newStatus) {
+  if (!newStatus) return;
+  const lead = allLeads.find(l => l['الاسم'] === name);
+  if (lead) {
+    lead['الحالة'] = newStatus;
+    renderAll();
+    showToast(`✅ ${name}: ${newStatus}`);
+    // في التطبيق الحقيقي: اتصل بـ Google Apps Script لتحديث الشيت
+  }
+}
+
+// ===== MODAL =====
+function openModal() {
+  document.getElementById('modalOverlay').classList.add('open');
+}
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+  ['fName','fBiz','fContact','fNotes'].forEach(id => document.getElementById(id).value = '');
+}
+
+function addLeadFromForm() {
+  const name = document.getElementById('fName').value.trim();
+  if (!name) { showToast('❌ أدخل اسم العميل', 'error'); return; }
+  
+  const lead = {
+    ID: 'L' + Date.now(),
+    الاسم: name,
+    'النشاط التجاري': document.getElementById('fBiz').value.trim(),
+    المنصة: document.getElementById('fPlatform').value,
+    التواصل: document.getElementById('fContact').value.trim(),
+    الحالة: document.getElementById('fStatus').value,
+    ملاحظات: document.getElementById('fNotes').value.trim(),
+    'تاريخ الإضافة': new Date().toLocaleDateString('ar-SA'),
+  };
+  
+  allLeads.unshift(lead);
+  renderAll();
+  closeModal();
+  showToast(`✅ تم إضافة ${name} بنجاح`);
+}
+
+// ===== TOAST =====
+function showToast(msg, type='success') {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.style.background = type === 'error' ? '#ff6b6b' : 'var(--green)';
+  toast.style.color = type === 'error' ? '#fff' : '#0a2e1e';
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 3500);
+}
+
+// Load demo on start if no config
+setTimeout(() => {
+  if (!config.sheetId) loadDemoData();
+}, 500);
+</script>
+</body>
+</html>
